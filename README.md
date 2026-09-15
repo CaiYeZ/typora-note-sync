@@ -2,6 +2,8 @@
 
 基于 Typora Community Plugin 的 Git 笔记同步扩展。当前版本：**0.1.2**。
 
+> **AI 辅助开发项目**：本扩展由作者提出需求，通过 ChatGPT / Codex 辅助编写代码、迭代功能及整理发布文档。
+
 ## 功能
 
 - 手动拉取：执行 `git pull --rebase --autostash`。
