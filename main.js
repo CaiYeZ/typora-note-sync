@@ -13,7 +13,7 @@ export const DEFAULT_SETTINGS = {
     timestampPrefix: 'sync',
     autoSyncOnStart: false,
     autoSyncOnSave: false,
-    saveSyncDelaySeconds: 5,
+    saveSyncDelaySeconds: 2,
     autoSyncIntervalMinutes: 0,
     noticeDurationMs: 3000,
 };
@@ -23,6 +23,7 @@ export default class NoteSyncPlugin extends Plugin {
         this.operation = null;
         this.intervalTimer = null;
         this.saveTimer = null;
+        this.pendingSync = false;
         this.lastResult = '尚未操作';
         this.settingTab = null;
     }
@@ -64,8 +65,8 @@ export default class NoteSyncPlugin extends Plugin {
             if (!this.settings.get('autoSyncOnSave'))
                 return;
             if (this.saveTimer)
-                clearTimeout(this.saveTimer);
-            const delay = Math.max(1, Number(this.settings.get('saveSyncDelaySeconds')) || 5) * 1000;
+                return;
+            const delay = Math.max(1, Number(this.settings.get('saveSyncDelaySeconds')) || 2) * 1000;
             this.saveTimer = setTimeout(() => {
                 this.saveTimer = null;
                 void this.syncNow('save');
@@ -82,6 +83,7 @@ export default class NoteSyncPlugin extends Plugin {
             clearInterval(this.intervalTimer);
         if (this.saveTimer)
             clearTimeout(this.saveTimer);
+        this.pendingSync = false;
         this.settingTab = null;
     }
     getLastResult() {
@@ -159,12 +161,17 @@ export default class NoteSyncPlugin extends Plugin {
         finally {
             this.operation = null;
             this.settingTab?.refreshSyncStatus();
+            this.runPendingSync();
         }
     }
     async syncNow(trigger) {
         if (this.isBusy()) {
-            if (trigger === 'manual')
+            if (trigger === 'manual') {
                 Notice.warning('Git 操作正在进行，请稍后再试。', this.settings.get('noticeDurationMs'));
+            }
+            else {
+                this.pendingSync = true;
+            }
             return;
         }
         this.operation = 'sync';
@@ -227,7 +234,14 @@ export default class NoteSyncPlugin extends Plugin {
         finally {
             this.operation = null;
             this.settingTab?.refreshSyncStatus();
+            this.runPendingSync();
         }
+    }
+    runPendingSync() {
+        if (!this.pendingSync || this.isBusy())
+            return;
+        this.pendingSync = false;
+        void this.syncNow('pending');
     }
     refreshTyporaFilePanel() {
         try {
@@ -471,7 +485,7 @@ class NoteSyncSettingTab extends SettingTab {
         });
         this.addSetting((setting) => {
             setting.addName('保存后提交并推送');
-            setting.addDescription('检测到保存后延迟执行 add → commit → push；不会自动 pull。');
+            setting.addDescription('检测到保存后在固定延迟内合并频繁保存，再执行 add → commit → push；Git 忙碌时会排队补同步，不会自动 pull。');
             setting.addCheckbox(input => {
                 input.checked = this.plugin.settings.get('autoSyncOnSave');
                 input.onchange = () => this.plugin.settings.set('autoSyncOnSave', input.checked);
@@ -482,8 +496,8 @@ class NoteSyncSettingTab extends SettingTab {
             setting.addInput('number', input => {
                 input.min = '1';
                 input.step = '1';
-                input.value = String(this.plugin.settings.get('saveSyncDelaySeconds') || 5);
-                input.onchange = () => this.plugin.settings.set('saveSyncDelaySeconds', Math.max(1, Number(input.value) || 5));
+                input.value = String(this.plugin.settings.get('saveSyncDelaySeconds') || 2);
+                input.onchange = () => this.plugin.settings.set('saveSyncDelaySeconds', Math.max(1, Number(input.value) || 2));
             });
         });
         this.addSetting((setting) => {

@@ -1,6 +1,6 @@
 # Typora Note Sync
 
-基于 Typora Community Plugin 的 Git 笔记同步扩展。当前版本：**0.1.2**。
+基于 Typora Community Plugin 的 Git 笔记同步扩展。当前版本：**0.1.3**。
 
 > **AI 辅助开发项目**：本扩展由作者提出需求，通过 ChatGPT / Codex 辅助编写代码、迭代功能及整理发布文档。
 
@@ -20,7 +20,7 @@ manifest 声明：Typora ≥ 1.5.0、Typora Community Plugin ≥ 2.7.7，平台�
 
 ## 安装与升级
 
-1. 从本仓库 Releases 下载 `typora-note-sync-v0.1.2.zip` 安装包。
+1. 从本仓库 Releases 下载 `typora-note-sync-v0.1.3.zip` 安装包。
 2. 关闭 Typora，解压得到固定名称的 `typora-note-sync` 文件夹。
 3. Windows 下放入 `%USERPROFILE%\.typora\community-plugins\plugins\`。
 4. 确认文件直接位于 `typora-note-sync/main.js`、`manifest.json`、`style.css`，不要重复嵌套目录。
@@ -38,7 +38,7 @@ manifest 声明：Typora ≥ 1.5.0、Typora Community Plugin ≥ 2.7.7，平台�
 | 时间戳模式 | 例如 `sync: 2026-09-15 20:30:00` |
 | 自定义模板 | 支持 `{date}`、`{time}`、`{datetime}`、`{branch}`、`{files}` |
 | 启动时拉取 | 启动约 2.5 秒后仅拉取；兼容旧设置键 `autoSyncOnStart` |
-| 保存后延迟 | 默认 5 秒 |
+| 保存后延迟 | 默认 2 秒；频繁保存合并到固定延迟内，Git 忙碌时排队补同步 |
 | 定时提交并推送 | 0 表示关闭，其他值为分钟 |
 
 先在设置中点击“测试仓库”，再手动测试“手动拉取”和“立即同步”。远端有新提交导致 push 被拒绝时，先手动拉取，再重新同步。插件会尝试在拉取失败时中止 rebase；出现冲突仍需检查 Git 状态并处理文件。
